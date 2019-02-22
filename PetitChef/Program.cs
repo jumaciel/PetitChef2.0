@@ -15,13 +15,94 @@ namespace PetitChef
             Console.WriteLine("Hello World!");
             var link = "https://pt.petitchef.com/receitas/rapida";
             Pagina(link);
+        }
+
+        private static void Pagina(string link)
+        {
+            var doc = GetHtmlNode(link);
+
+            AddReceitaNaLista(doc);
+
+            var nodeNext = doc.SelectSingleNode("//a[@rel='next']");
+
+            if (nodeNext != null)
+            {
+                var att = nodeNext.GetAttributeValue("href", string.Empty);
+                string attLink = "https://www.worldwildlife.org" + att;
+
+                Pagina(attLink);
+            }
+        }
+
+        public static HtmlNode GetHtmlNode(string url)
+        {
+            var web = new HtmlWeb();
+            HtmlDocument htmldoc = web.Load(url);
+            HtmlNode htmlNode = htmldoc.DocumentNode;
+
+            return htmlNode;
+        }
+
+        public static void AddReceitaNaLista(HtmlNode link)
+        {
+            var linhas = link.SelectNodes("//div[@class ='i-right']");
+            foreach (var linha in linhas)
+            {
+                Receita novaReceita = CriarNovaReceita(linha);
+
+                listaReceitas.Add(novaReceita);
+            }
 
         }
 
         public static Receita CriarNovaReceita(HtmlNode linha)
         {
             Receita receita = new Receita();
+
+            GetPropriedades(receita, linha);
+            GetTituloUrl(receita, linha);
+            GetIngredientes(receita, linha);
+            GetAvaliacaoVotos(receita, linha);
+            GetContemGluten(receita, linha);
             
+          
+
+            //div[@class="ir-vote"]
+
+            //HtmlNode gluten;
+            //HtmlNode titulo = linha.SelectSingleNode("./h2/a");
+            //HtmlNode nota = linha.SelectSingleNode("");
+            //HtmlNode votos = linha.SelectSingleNode("");
+            //HtmlNode comentarios = linha.SelectSingleNode("");
+            //HtmlNode ameis = linha.SelectSingleNode("");
+            //HtmlNode link = linha.SelectSingleNode("./span[6]");
+            //HtmlNode ingredientes = linha.SelectSingleNode("./div[@class ='i - right']/div[@class='ingredients']");
+
+            return receita;
+        }
+
+        private static void GetContemGluten(Receita receita, HtmlNode linha)
+        {
+            throw new NotImplementedException();
+        }
+
+        private static void GetAvaliacaoVotos(Receita receita, HtmlNode linha)
+        {
+            throw new NotImplementedException();
+        }
+
+        private static void GetIngredientes(Receita receita, HtmlNode linha)
+        {
+            throw new NotImplementedException();
+        }
+
+        private static void GetTituloUrl(Receita receita, HtmlNode linha)
+        {
+            throw new NotImplementedException();
+        }
+
+        private static void GetPropriedades(Receita receita, HtmlNode linha)
+        {
             var propriedades = linha.SelectNodes("./div[@class='prop']/span");
 
             foreach (var procuraProp in propriedades)
@@ -33,8 +114,8 @@ namespace PetitChef
                     throw new Exception("Não foi possivel capturar as propriedades da receita!");
                 }
 
-                var texto= Regex.Match(text, @"(.+): (.+)");
-           
+                var texto = Regex.Match(text, @"(.+): (.+)");
+
 
                 switch (texto.Groups[1].Value)
                 {
@@ -66,66 +147,8 @@ namespace PetitChef
 
                     default:
                         throw new Exception("Existe uma nova propriedade não mapeada.");
-
                 }
-
-            }
-
-
-
-
-            //HtmlNode gluten;
-            //HtmlNode titulo = linha.SelectSingleNode("./h2/a");
-            //HtmlNode nota = linha.SelectSingleNode("");
-            //HtmlNode votos = linha.SelectSingleNode("");
-            //HtmlNode comentarios = linha.SelectSingleNode("");
-            //HtmlNode ameis = linha.SelectSingleNode("");
-            //HtmlNode link = linha.SelectSingleNode("./span[6]");
-            //HtmlNode ingredientes = linha.SelectSingleNode("./div[@class ='i - right']/div[@class='ingredients']");
-
-            return receita;
-        }
-
-        public static HtmlNode GetHtmlNode(string href)
-        {
-            var web = new HtmlWeb();
-            HtmlDocument htmldoc = web.Load(href);
-            HtmlNode htmlNode = htmldoc.DocumentNode;
-
-            return htmlNode;
-        }
-
-        public static void AddReceitaNaLista(HtmlNode link)
-        {
-            var linhas = link.SelectNodes("//div[@class ='i-right']");
-            foreach (var linha in linhas)
-            {
-                Receita novaReceita = CriarNovaReceita(linha);
-                
-                listaReceitas.Add(novaReceita);
-            }
-
-        }
-        private static void Pagina(string link)
-        {
-            var doc = GetHtmlNode(link);
-
-            AddReceitaNaLista(doc);
-
-            var nodeNext = doc.SelectSingleNode("//a[@rel='next']");
-
-            if (nodeNext != null)
-            {
-                var att = nodeNext.GetAttributeValue("href", string.Empty);
-                string attLink = "https://www.worldwildlife.org" + att;
-
-                Pagina(attLink);
             }
         }
-
     }
-
-
 }
-
-//following-sibling::li[1]/a"   usar
