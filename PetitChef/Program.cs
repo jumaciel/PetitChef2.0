@@ -12,7 +12,6 @@ namespace PetitChef
 
         static void Main(string[] args)
         {
-
             var link = "https://pt.petitchef.com/receitas/rapida";
             Paginacao(link);
         }
@@ -34,6 +33,13 @@ namespace PetitChef
             }
         }
 
+        public static bool IsReceita(HtmlNode linha)
+        {
+            var propOrReceita = linha.SelectSingleNode("./p | ./fieldset");
+
+            return propOrReceita == null;
+        }
+
         public static HtmlNode GetHtmlNode(string url)
         {
             var web = new HtmlWeb();
@@ -48,11 +54,12 @@ namespace PetitChef
             var linhas = link.SelectNodes("//div[@class ='i-right']");
             foreach (var linha in linhas)
             {
-                Receita novaReceita = CriarNovaReceita(linha); //por algum motivo acho que poderia ser de outra forma
-
-                listaReceitas.Add(novaReceita);
+                if (IsReceita(linha))
+                {
+                    Receita novaReceita = CriarNovaReceita(linha);
+                    listaReceitas.Add(novaReceita);
+                }
             }
-
         }
 
         public static Receita CriarNovaReceita(HtmlNode linha)
@@ -65,7 +72,8 @@ namespace PetitChef
             GetIngredientes(receita, linha);
             GetUrl(receita, linha);
             GetPropriedades(receita, linha);
-
+            GetAmeis(receita, linha);
+            GetComentarios(receita, linha);
 
             return receita;
         }
@@ -78,12 +86,10 @@ namespace PetitChef
 
         private static void GetContemGluten(Receita receita, HtmlNode linha)
         {
-            HtmlNode gluten = linha.SelectSingleNode("//img[@title='sem glúten']");
+            var gluten = linha.SelectSingleNode("./div/img[@title='sem glúten']");
 
-            if (gluten == null)
-            {
-                receita.Gluten = true;
-            }
+            if (gluten == null) receita.Gluten = true;
+
             else receita.Gluten = false;
         }
 
@@ -91,12 +97,7 @@ namespace PetitChef
         {
             HtmlNode nota = linha.SelectSingleNode("./div/i[contains(@class, 'note-fa')]");
 
-            if (nota == null)
-            {
-                receita.Nota = "Não possui";
-                receita.Votos = "Não possui";
-            }
-            else
+            if (nota != null)
             {
                 var notaVotos = nota.GetAttributeValue("title", string.Empty);
                 if (notaVotos.Equals(string.Empty))
@@ -108,22 +109,26 @@ namespace PetitChef
                 receita.Nota = texto.Groups[1].Value;
                 receita.Votos = texto.Groups[2].Value;
             }
+        }
 
+        private static void GetAmeis(Receita receita, HtmlNode linha)
+        {
             var likes = linha.SelectSingleNode("./div[contains(@class,'ir-vote')]/i[contains(@class, 'fa-heart')]/following-sibling::text()");
 
-            if (likes == null) receita.Ameis = "não possui";
+            receita.Ameis = likes.InnerText;
+        }
 
-            else receita.Ameis = likes.InnerText;
-
+        private static void GetComentarios(Receita receita, HtmlNode linha)
+        {
             var comentarios = linha.SelectSingleNode("./div[contains(@class,'ir-vote')]/i[contains(@class, 'fa-comments')]/following-sibling::text()");
             var rgComentarios = Regex.Match(comentarios.InnerText, @"(\(\d+\))");
             receita.Comentarios = rgComentarios.Value;
-
         }
 
         private static void GetIngredientes(Receita receita, HtmlNode linha)
         {
             HtmlNode ingredientes = linha.SelectSingleNode("./div[@class='ingredients']");
+
             receita.Ingredientes = ingredientes.InnerText;
         }
 
@@ -131,17 +136,18 @@ namespace PetitChef
         {
             HtmlNode url = linha.SelectSingleNode("./h2[@class='ir-title']/a");
             var href = url.GetAttributeValue("href", string.Empty);
+
             if (href.Equals(string.Empty))
             {
                 throw new Exception("Não foi possivel capturar o link da receita!");
             }
-            receita.Link = href;
 
+            receita.Link = href;
         }
 
         private static void GetPropriedades(Receita receita, HtmlNode linha)
         {
-            var propriedades = linha.SelectNodes("//div[@class ='i-right']/div[@class='prop']/span");
+            var propriedades = linha.SelectNodes("./div[@class='prop']/span");
 
             foreach (var procuraProp in propriedades)
             {
@@ -154,7 +160,6 @@ namespace PetitChef
 
                 var texto = Regex.Match(text, @"(.+): (.+)");
 
-
                 switch (texto.Groups[1].Value)
                 {
                     case "Tipo de receita":
@@ -162,26 +167,31 @@ namespace PetitChef
                             receita.Tipo = texto.Groups[2].Value;
                             break;
                         }
+
                     case "Dificuldade":
                         {
                             receita.Dificuldade = texto.Groups[2].Value;
                             break;
                         }
+
                     case "Pronto em":
                         {
                             receita.Tempo = texto.Groups[2].Value;
                             break;
                         }
+
                     case "Calorias":
                         {
                             receita.Calorias = texto.Groups[2].Value;
                             break;
                         }
+
                     case "Cozedura":
                         {
                             receita.Cozedura = texto.Groups[2].Value;
                             break;
                         }
+
                     case "Preparação":
                         {
                             receita.Tempo = texto.Groups[2].Value;
