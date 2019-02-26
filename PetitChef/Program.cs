@@ -35,9 +35,15 @@ namespace PetitChef
 
         public static bool IsReceita(HtmlNode linha)
         {
-            var propOrReceita = linha.SelectSingleNode("./p | ./fieldset");
+            HtmlNode propOrReceita = linha.SelectSingleNode("./p | ./fieldset ");
+            HtmlNode ingredientes = linha.SelectSingleNode("./div[@class='ingredients']");
 
-            return propOrReceita == null;
+            if (propOrReceita != null | ingredientes == null)
+            {
+                return false;
+            }
+              
+            return true;
         }
 
         public static HtmlNode GetHtmlNode(string url)
@@ -109,20 +115,34 @@ namespace PetitChef
                 receita.Nota = texto.Groups[1].Value;
                 receita.Votos = texto.Groups[2].Value;
             }
+
+            receita.Nota = "";
+            receita.Votos = "";
         }
 
         private static void GetAmeis(Receita receita, HtmlNode linha)
         {
             var likes = linha.SelectSingleNode("./div[contains(@class,'ir-vote')]/i[contains(@class, 'fa-heart')]/following-sibling::text()");
-
-            receita.Ameis = likes.InnerText;
+            if (likes != null)
+            {
+                receita.Ameis = likes.InnerText;
+            }
+            receita.Ameis = "";
         }
 
         private static void GetComentarios(Receita receita, HtmlNode linha)
         {
             var comentarios = linha.SelectSingleNode("./div[contains(@class,'ir-vote')]/i[contains(@class, 'fa-comments')]/following-sibling::text()");
-            var rgComentarios = Regex.Match(comentarios.InnerText, @"(\(\d+\))");
-            receita.Comentarios = rgComentarios.Value;
+            if (comentarios != null)
+            {
+                var rgComentarios = Regex.Match(comentarios.InnerText, @"(\(\d+\))");
+
+                if (rgComentarios == null) throw new Exception("Não foi possivel capturar os comentarios da receita!");
+
+                receita.Comentarios = rgComentarios.Value;
+            }
+
+            receita.Comentarios = "";
         }
 
         private static void GetIngredientes(Receita receita, HtmlNode linha)
@@ -134,7 +154,7 @@ namespace PetitChef
 
         private static void GetUrl(Receita receita, HtmlNode linha)
         {
-            HtmlNode url = linha.SelectSingleNode("./h2[@class='ir-title']/a");
+            HtmlNode url = linha.SelectSingleNode("//h2[@class='ir-title']/a");
             var href = url.GetAttributeValue("href", string.Empty);
 
             if (href.Equals(string.Empty))
